@@ -9,7 +9,13 @@ import argparse
 import numpy
 import netCDF4
 
+check_list = []
+def is_a_check(fun):
+    check_list.append(fun.__name__)
+    return fun
 
+
+@is_a_check
 def layer_one_missing(nc):
     '''Checks an open NetCDF file for a missing layer at t=1
 
@@ -38,20 +44,25 @@ def layer_one_missing(nc):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('files', metavar='FILE', type=str, nargs='+',
-                        help='File to check for missing layer')
-    parser.add_argument('-c', '--checks', default='layer_one_missing',\
-                        help='Comma separated list of check names to be'\
-                        'performed')
+    parser.add_argument('files', metavar='FILE', type=str, nargs='*',
+            help='File to check for missing layer')
+    parser.add_argument('-c', '--checks', default='layer_one_missing',
+            help='Comma separated list of check names to be performed')
+    parser.add_argument('-l', '--list_checks', action='store_true',
+            help='List the names of all available checks and exit',
+            default=False)
 
     args = parser.parse_args()
+
+    if args.list_checks:
+        print("Available checks:", ','.join(check_list))
+
     checks = []
     for check in args.checks.split(','):
-        try:
-            checks.append(globals()[check])
-        except KeyError:
+        if check not in check_list:
             print("NetCDF check '{}' does not exist".format(check), file=sys.stderr)
             sys.exit(1)
+        checks.append(globals()[check])
 
     for file_ in args.files:
         nc = netCDF4.Dataset(file_, 'r')
