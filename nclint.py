@@ -42,6 +42,24 @@ def layer_one_missing(nc):
     return False
 
 
+@is_a_check
+def vars_missing_units(nc):
+    '''Returns True if any variable is not attributed with units'''
+    for var_ in nc.variables.values():
+        if not hasattr(var_, 'units'):
+            return True
+    return False
+
+
+@is_a_check
+def missing_time_units(nc):
+    '''Returns True if the time variable is missing units attribute'''
+    if 'time' in nc.variables:
+        return not hasattr(nc.variables['time'], 'units')
+    else:
+        return True
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('files', metavar='FILE', type=str, nargs='*',
