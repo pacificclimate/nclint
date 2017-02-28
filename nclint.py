@@ -60,6 +60,95 @@ def missing_time_units(nc):
         return True
 
 
+def missing_global_attrs(nc, attrs):
+    '''Returns True if any global attribute named in array attrs is missing from NetCDF file nc'''
+    return not all(hasattr(nc, attr) for attr in attrs)
+
+
+@is_a_check
+def missing_cmip5_global_attrs(nc):
+    '''Returns True if any required CMIP5 output global attribute is missing.
+    Reference: http://cmip-pcmdi.llnl.gov/cmip5/docs/CMIP5_output_metadata_requirements_22May14.pdf
+    '''
+    return missing_global_attrs(nc, '''
+        branch_time
+        contact
+        Conventions
+        creation_date
+        experiment
+        experiment_id
+        forcing
+        frequency
+        initialization_method
+        institute_id
+        institution
+        model_id
+        modeling_realm
+        parent_experiment_id
+        parent_experiment_rip
+        physics_version
+        product
+        project_id
+        realization
+        source
+        table_id
+        tracking_id
+    '''.split())
+
+
+@is_a_check
+def missing_cf_global_attrs(nc):
+    '''Returns True if any CF Metadata Convention global attribute is missing.
+    Reference: http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#description-of-file-contents
+    '''
+    return missing_global_attrs(nc, '''
+        title
+        institution
+        source
+        history
+        references
+        comment
+    '''.split())
+
+
+@is_a_check
+def missing_downscaling_global_attrs(nc):
+    '''Returns True if any required global metadata attribute for downscaled model products is missing.
+    Reference: https://redmine.pacificclimate.org/projects/downscaling/wiki
+
+    '''
+    return missing_global_attrs(nc, '''
+        Conventions
+        comment
+        contact
+        creation_date
+        driving_experiment
+        driving_experiment_name
+        driving_institute_id
+        driving_institution
+        driving_model_ensemble_member
+        driving_model_id
+        frequency
+        institute_id
+        institution
+        modeling_realm
+        product
+        realization
+        references
+        source
+        target_contact
+        target_dataset
+        target_history
+        target_id
+        target_institute_id
+        target_institution
+        target_references
+        target_version
+        title
+        version
+    '''.split())
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('files', metavar='FILE', type=str, nargs='*',
