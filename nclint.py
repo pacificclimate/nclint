@@ -67,9 +67,9 @@ def missing_global_attrs(nc, attrs):
 
 @is_a_check
 def missing_cmip5_global_attrs(nc):
-    '''Returns True if any required CMIP5 output global attribute is missing.
+    """Returns True if any required CMIP5 output global attribute is missing.
     Reference: http://cmip-pcmdi.llnl.gov/cmip5/docs/CMIP5_output_metadata_requirements_22May14.pdf
-    '''
+    """
     return missing_global_attrs(nc, '''
         branch_time
         contact
@@ -98,9 +98,9 @@ def missing_cmip5_global_attrs(nc):
 
 @is_a_check
 def missing_cf_global_attrs(nc):
-    '''Returns True if any CF Metadata Convention global attribute is missing.
+    """Returns True if any CF Metadata Convention global attribute is missing.
     Reference: http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#description-of-file-contents
-    '''
+    """
     return missing_global_attrs(nc, '''
         title
         institution
@@ -112,41 +112,101 @@ def missing_cf_global_attrs(nc):
 
 
 @is_a_check
-def missing_downscaling_global_attrs(nc):
-    '''Returns True if any required global metadata attribute for downscaled model products is missing.
-    Reference: https://redmine.pacificclimate.org/projects/downscaling/wiki
-
-    '''
+def missing_downscaling_mandatory_global_attrs(nc):
+    """Returns True if any mandatory global metadata attribute for downscaled model products is missing.
+    Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
+    """
     return missing_global_attrs(nc, '''
-        Conventions
-        comment
         contact
+        Conventions
         creation_date
+        downscaling_method
+        downscaling_method_id
+        downscaling_package_id
         driving_experiment
-        driving_experiment_name
+        driving_experiment_id
+        driving_initialization_method
         driving_institute_id
         driving_institution
-        driving_model_ensemble_member
         driving_model_id
+        driving_physics_version
+        driving_realization
+        driving_tracking_id
         frequency
         institute_id
         institution
         modeling_realm
         product
-        realization
-        references
-        source
+        project_id
+        table_id
         target_contact
         target_dataset
-        target_history
-        target_id
+        target_dataset_id
         target_institute_id
         target_institution
         target_references
         target_version
         title
-        version
     '''.split())
+
+
+@is_a_check
+def missing_downscaling_optional_global_attrs(nc):
+    """Returns True if any optional global metadata attribute for downscaled model products is missing.
+    Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
+    """
+    return missing_global_attrs(nc, '''
+        domain
+        driving_forcing
+        driving_frequency
+        target_frequency
+        tracking_id
+    '''.split())
+
+
+@is_a_check
+def missing_downscaling_any_global_attrs(nc):
+    """Returns True if any mandatory OR optional global metadata attribute for downscaled model products is missing.
+    Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
+    """
+    return missing_downscaling_mandatory_global_attrs(nc) or missing_downscaling_optional_global_attrs(nc)
+
+
+@is_a_check
+def missing_hydromodel_mandatory_global_attrs(nc):
+    """Returns True if any mandatory global metadata attribute for hydrological modelling output products is missing.
+    Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
+    """
+    return missing_downscaling_mandatory_global_attrs(nc) or \
+           missing_global_attrs(nc, '''
+                downscaling_domain
+                hydromodel_method
+                hydromodel_method_id
+                hydromodel_version
+                hydromodel_resolution
+                hydromodel_type
+           '''.split())
+
+
+@is_a_check
+def missing_hydromodel_optional_global_attrs(nc):
+    """Returns True if any optional global metadata attribute for hydrological modelling output products is missing.
+    Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
+    """
+    return missing_downscaling_optional_global_attrs(nc) or \
+           missing_global_attrs(nc, '''
+                downscaling_frequency
+                hydromodel_settings
+           '''.split())
+
+
+@is_a_check
+def missing_hydromodel_any_global_attrs(nc):
+    """Returns True if any mandatory OR optional global metadata attribute for hydrological modelling output products
+    products is missing.
+    Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
+    """
+    return missing_hydromodel_mandatory_global_attrs(nc) or missing_hydromodel_optional_global_attrs(nc)
 
 
 if __name__ == '__main__':
