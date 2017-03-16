@@ -179,7 +179,7 @@ def missing_hydromodel_mandatory_global_attrs(nc):
     """
     return missing_downscaling_mandatory_global_attrs(nc) or \
            missing_global_attrs(nc, '''
-                downscaling_domain
+                domain
                 hydromodel_method
                 hydromodel_method_id
                 hydromodel_version
@@ -195,6 +195,7 @@ def missing_hydromodel_optional_global_attrs(nc):
     """
     return missing_downscaling_optional_global_attrs(nc) or \
            missing_global_attrs(nc, '''
+                downscaling_domain
                 downscaling_frequency
                 hydromodel_settings
            '''.split())
