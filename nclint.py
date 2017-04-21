@@ -444,5 +444,10 @@ if __name__ == '__main__':
         nc = netCDF4.Dataset(file_, 'r')
         for check in checks:
             if check(nc):
-                print(file_)
-                break
+                if args.verbose:
+                    print('{} FAILED {}'.format(file_, check.__name__))
+                else:
+                    print(file_)
+                    # In non-verbose mode, we only care whether a file is
+                    # good/bad. If it fails, skip the rest of the checks
+                    break
