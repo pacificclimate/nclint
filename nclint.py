@@ -418,11 +418,20 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--list_checks', action='store_true',
             help='List the names of all available checks and exit',
             default=False)
+    parser.add_argument('-v', '--verbose', action='store_true',
+            help='Provide more detail about available checks and check failures',
+            default=False)
 
     args = parser.parse_args()
 
     if args.list_checks:
-        print("Available checks:", ','.join(check_list))
+        if args.verbose:
+            for check_name in check_list:
+                check = globals()[check_name]
+                print('{}:\n{}\n'.format(check_name, check.__doc__))
+        else:
+            print("Available checks:", ','.join(check_list))
+        sys.exit(0)
 
     checks = []
     for check in args.checks.split(','):
