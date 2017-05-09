@@ -61,8 +61,8 @@ def missing_time_units(nc):
 
 
 def missing_global_attrs(nc, attrs):
-    '''Returns True if any global attribute named in array attrs is missing from NetCDF file nc'''
-    return not all(hasattr(nc, attr) for attr in attrs)
+    '''Returns a list of all global attributes in array `attrs` that are missing from NetCDF file `nc`'''
+    return [attr for attr in attrs if not hasattr(nc, attr)]
 
 
 @is_a_check
@@ -250,7 +250,7 @@ def missing_downscaling_mandatory_global_attrs(nc):
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Tables A & B
     """
-    return missing_pcic_common_mandatory_global_attrs(nc) or missing_downscaling_specific_mandatory_global_attrs(nc)
+    return missing_pcic_common_mandatory_global_attrs(nc) + missing_downscaling_specific_mandatory_global_attrs(nc)
 
 
 @is_a_check
@@ -275,7 +275,7 @@ def missing_downscaling_any_global_attrs(nc):
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Tables A & B
     """
-    return missing_downscaling_mandatory_global_attrs(nc) or missing_downscaling_optional_global_attrs(nc)
+    return missing_downscaling_mandatory_global_attrs(nc) + missing_downscaling_optional_global_attrs(nc)
 
 
 @is_a_check
@@ -388,10 +388,10 @@ def missing_hydromodel_obs_mandatory_global_attrs(nc):
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Tables A, C1, C2, D, E
     """
-    return missing_pcic_common_mandatory_global_attrs(nc) or \
-           missing_model_forcing_general_mandatory_attrs(nc) or \
-           missing_model_forcing_observational_mandatory_attrs(nc) or \
-           missing_calibration_mandatory_attrs(nc) or \
+    return missing_pcic_common_mandatory_global_attrs(nc) + \
+           missing_model_forcing_general_mandatory_attrs(nc) + \
+           missing_model_forcing_observational_mandatory_attrs(nc) + \
+           missing_calibration_mandatory_attrs(nc) + \
            missing_hydromodel_specific_mandatory_global_attrs(nc)
 
 
@@ -402,10 +402,10 @@ def missing_hydromodel_gcm_mandatory_global_attrs(nc):
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Tables A, C1, C3, D, E
     """
-    return missing_pcic_common_mandatory_global_attrs(nc) or \
-           missing_model_forcing_general_mandatory_attrs(nc) or \
-           missing_model_forcing_downscaled_gcm_mandatory_attrs(nc) or \
-           missing_calibration_mandatory_attrs(nc) or \
+    return missing_pcic_common_mandatory_global_attrs(nc) + \
+           missing_model_forcing_general_mandatory_attrs(nc) + \
+           missing_model_forcing_downscaled_gcm_mandatory_attrs(nc) + \
+           missing_calibration_mandatory_attrs(nc) + \
            missing_hydromodel_specific_mandatory_global_attrs(nc)
 
 
@@ -443,9 +443,10 @@ if __name__ == '__main__':
     for file_ in args.files:
         nc = netCDF4.Dataset(file_, 'r')
         for check in checks:
-            if check(nc):
+            result = check(nc)
+            if result:
                 if args.verbose:
-                    print('{} FAILED {}'.format(file_, check.__name__))
+                    print('{} FAILED {}: {}'.format(file_, check.__name__, result))
                 else:
                     print(file_)
                     # In non-verbose mode, we only care whether a file is
