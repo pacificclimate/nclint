@@ -125,12 +125,12 @@ summary_gcm_mandatory_global_attrs = '''
     model_id
     physics_version
     realization
-    tracking_id
 '''.split()
 
 summary_gcm_optional_global_attrs = '''
     forcing
     frequency
+    tracking_id
 '''.split()
 
 
