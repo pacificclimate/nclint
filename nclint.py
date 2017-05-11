@@ -61,13 +61,13 @@ def missing_time_units(nc):
 
 
 def missing_global_attrs(nc, attrs):
-    '''Returns True if any global attribute named in array attrs is missing from NetCDF file nc'''
-    return not all(hasattr(nc, attr) for attr in attrs)
+    '''Returns a list of all global attributes in array `attrs` that are missing from NetCDF file `nc`'''
+    return [attr for attr in attrs if not hasattr(nc, attr)]
 
 
 @is_a_check
 def missing_cmip5_global_attrs(nc):
-    """Returns True if any required CMIP5 output global attribute is missing.
+    """Checks if any required CMIP5 output global attribute is missing.
     Reference: http://cmip-pcmdi.llnl.gov/cmip5/docs/CMIP5_output_metadata_requirements_22May14.pdf
     """
     return missing_global_attrs(nc, '''
@@ -98,7 +98,7 @@ def missing_cmip5_global_attrs(nc):
 
 @is_a_check
 def missing_cf_global_attrs(nc):
-    """Returns True if any CF Metadata Convention global attribute is missing.
+    """Checks if any CF Metadata Convention global attribute is missing.
     Reference: http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#description-of-file-contents
     """
     return missing_global_attrs(nc, '''
@@ -213,7 +213,7 @@ hydromodel_specific_optional_global_attrs = '''
 
 @is_a_check
 def missing_pcic_common_mandatory_global_attrs(nc):
-    """Returns True if any mandatory global attribute common to all PCIC data files is missing.
+    """Checks if any mandatory global attribute common to all PCIC data files is missing.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Table A.
     """
@@ -234,7 +234,7 @@ def missing_pcic_common_mandatory_global_attrs(nc):
 
 @is_a_check
 def missing_downscaling_specific_mandatory_global_attrs(nc):
-    """Returns True if any mandatory global metadata attribute describing downscaling is missing.
+    """Checks if any mandatory global metadata attribute describing downscaling is missing.
     This check only checks for downscaling-specific attributes; additional attributes are required to fully describe
     a downscaling output file.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
@@ -245,17 +245,17 @@ def missing_downscaling_specific_mandatory_global_attrs(nc):
 
 @is_a_check
 def missing_downscaling_mandatory_global_attrs(nc):
-    """Returns True if any mandatory global metadata attribute for downscaled model products is missing.
+    """Checks if any mandatory global metadata attribute for downscaled model products is missing.
     This checks the complete set of mandatory global attributes for a downscaled output file.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Tables A & B
     """
-    return missing_pcic_common_mandatory_global_attrs(nc) or missing_downscaling_specific_mandatory_global_attrs(nc)
+    return missing_pcic_common_mandatory_global_attrs(nc) + missing_downscaling_specific_mandatory_global_attrs(nc)
 
 
 @is_a_check
 def missing_downscaling_optional_global_attrs(nc):
-    """Returns true if any optional global metadata attribute for a downscaled output file is missing.
+    """Checks if any optional global metadata attribute for a downscaled output file is missing.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Tables A & B
     """
@@ -271,16 +271,16 @@ def missing_downscaling_optional_global_attrs(nc):
 
 @is_a_check
 def missing_downscaling_any_global_attrs(nc):
-    """Returns True if any mandatory OR optional global metadata attribute for downscaled model products is missing.
+    """Checks if any mandatory OR optional global metadata attribute for downscaled model products is missing.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Tables A & B
     """
-    return missing_downscaling_mandatory_global_attrs(nc) or missing_downscaling_optional_global_attrs(nc)
+    return missing_downscaling_mandatory_global_attrs(nc) + missing_downscaling_optional_global_attrs(nc)
 
 
 @is_a_check
 def missing_model_forcing_general_mandatory_attrs(nc):
-    """Returns True if any mandatory global metadata attribute describing general model forcing is missing.
+    """Checks if any mandatory global metadata attribute describing general model forcing is missing.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Table C1
     """
@@ -291,7 +291,7 @@ def missing_model_forcing_general_mandatory_attrs(nc):
 
 @is_a_check
 def missing_model_forcing_general_optional_attrs(nc):
-    """Returns True if any optional global metadata attribute describing general model forcing is missing.
+    """Checks if any optional global metadata attribute describing general model forcing is missing.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Table C1
     """
@@ -302,7 +302,7 @@ def missing_model_forcing_general_optional_attrs(nc):
 
 @is_a_check
 def missing_model_forcing_observational_mandatory_attrs(nc):
-    """Returns True if any mandatory global metadata attribute describing model forcing by observational data is missing.
+    """Checks if any mandatory global metadata attribute describing model forcing by observational data is missing.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Table C2
     """
@@ -312,7 +312,7 @@ def missing_model_forcing_observational_mandatory_attrs(nc):
 
 @is_a_check
 def missing_model_forcing_observational_optional_attrs(nc):
-    """Returns True if any optional global metadata attribute describing model forcing by observational data is missing.
+    """Checks if any optional global metadata attribute describing model forcing by observational data is missing.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Table C2
     """
@@ -322,7 +322,7 @@ def missing_model_forcing_observational_optional_attrs(nc):
 
 @is_a_check
 def missing_model_forcing_downscaled_gcm_mandatory_attrs(nc):
-    """Returns True if any mandatory global metadata attribute describing model forcing by downscaled gcm data is missing.
+    """Checks if any mandatory global metadata attribute describing model forcing by downscaled gcm data is missing.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Table C3
     """
@@ -332,7 +332,7 @@ def missing_model_forcing_downscaled_gcm_mandatory_attrs(nc):
 
 @is_a_check
 def missing_model_forcing_downscaled_gcm_optional_attrs(nc):
-    """Returns True if any optional global metadata attribute describing model forcing by downscaled gcm data is missing.
+    """Checks if any optional global metadata attribute describing model forcing by downscaled gcm data is missing.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Table C3
     """
@@ -342,7 +342,7 @@ def missing_model_forcing_downscaled_gcm_optional_attrs(nc):
 
 @is_a_check
 def missing_calibration_mandatory_attrs(nc):
-    """Returns True if any mandatory global metadata attribute describing model calibration dataset is missing.
+    """Checks if any mandatory global metadata attribute describing model calibration dataset is missing.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Table D
     """
@@ -352,7 +352,7 @@ def missing_calibration_mandatory_attrs(nc):
 
 @is_a_check
 def missing_model_calibration_optional_attrs(nc):
-    """Returns True if any optional global metadata attribute describing model calibration dataset is missing.
+    """Checks if any optional global metadata attribute describing model calibration dataset is missing.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Table D
     """
@@ -361,7 +361,7 @@ def missing_model_calibration_optional_attrs(nc):
 
 @is_a_check
 def missing_hydromodel_specific_mandatory_global_attrs(nc):
-    """Returns True if any mandatory global metadata attribute specific to hydrological models is missing.
+    """Checks if any mandatory global metadata attribute specific to hydrological models is missing.
     This check only checks for hydromodel-specific attributes; additional attributes are required to fully describe
     a hydromodel output file.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
@@ -372,7 +372,7 @@ def missing_hydromodel_specific_mandatory_global_attrs(nc):
 
 @is_a_check
 def missing_hydromodel_specific_optional_global_attrs(nc):
-    """Returns True if any optional global metadata attribute specific to hydrological models is missing.
+    """Checks if any optional global metadata attribute specific to hydrological models is missing.
     This check only checks for hydromodel-specific attributes; additional attributes are required to fully describe
     a hydromodel output file.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
@@ -383,29 +383,29 @@ def missing_hydromodel_specific_optional_global_attrs(nc):
 
 @is_a_check
 def missing_hydromodel_obs_mandatory_global_attrs(nc):
-    """Returns True if any mandatory global metadata attribute for hydrological modelling output products is missing.
+    """Checks if any mandatory global metadata attribute for hydrological modelling output products is missing.
     This check is the full deal -- all attributes needed for an output file from a hydromodel forced by observations.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Tables A, C1, C2, D, E
     """
-    return missing_pcic_common_mandatory_global_attrs(nc) or \
-           missing_model_forcing_general_mandatory_attrs(nc) or \
-           missing_model_forcing_observational_mandatory_attrs(nc) or \
-           missing_calibration_mandatory_attrs(nc) or \
+    return missing_pcic_common_mandatory_global_attrs(nc) + \
+           missing_model_forcing_general_mandatory_attrs(nc) + \
+           missing_model_forcing_observational_mandatory_attrs(nc) + \
+           missing_calibration_mandatory_attrs(nc) + \
            missing_hydromodel_specific_mandatory_global_attrs(nc)
 
 
 @is_a_check
 def missing_hydromodel_gcm_mandatory_global_attrs(nc):
-    """Returns True if any mandatory global metadata attribute for hydrological modelling output products is missing.
+    """Checks if any mandatory global metadata attribute for hydrological modelling output products is missing.
     This check is the full deal -- all attributes needed for an output file from a hydromodel forced by observations.
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Tables A, C1, C3, D, E
     """
-    return missing_pcic_common_mandatory_global_attrs(nc) or \
-           missing_model_forcing_general_mandatory_attrs(nc) or \
-           missing_model_forcing_downscaled_gcm_mandatory_attrs(nc) or \
-           missing_calibration_mandatory_attrs(nc) or \
+    return missing_pcic_common_mandatory_global_attrs(nc) + \
+           missing_model_forcing_general_mandatory_attrs(nc) + \
+           missing_model_forcing_downscaled_gcm_mandatory_attrs(nc) + \
+           missing_calibration_mandatory_attrs(nc) + \
            missing_hydromodel_specific_mandatory_global_attrs(nc)
 
 
@@ -443,9 +443,10 @@ if __name__ == '__main__':
     for file_ in args.files:
         nc = netCDF4.Dataset(file_, 'r')
         for check in checks:
-            if check(nc):
+            result = check(nc)
+            if result:
                 if args.verbose:
-                    print('{} FAILED {}'.format(file_, check.__name__))
+                    print('{} FAILED {}: {}'.format(file_, check.__name__, result))
                 else:
                     print(file_)
                     # In non-verbose mode, we only care whether a file is
