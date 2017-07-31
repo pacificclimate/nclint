@@ -1,3 +1,4 @@
+#!python
 '''nclint: A simple script which checks NetCDF files for problems
 
 Outputs the name of any file that fails any check.
@@ -408,6 +409,27 @@ def missing_hydromodel_gcm_mandatory_global_attrs(nc):
            missing_model_forcing_downscaled_gcm_mandatory_attrs(nc) + \
            missing_calibration_mandatory_attrs(nc) + \
            missing_hydromodel_specific_mandatory_global_attrs(nc)
+
+
+@is_a_check
+def cant_generate_climos(nc):
+    """Checks to see if the generate_climos script will fail (raise an
+    exception) due to metadata when run.
+
+    Tests whether the nchelpers properties that generate_climos
+    needs are undefined or raise an exception.
+    """
+    for name in '''
+        time_var
+        cmor_filename
+    '''.split():
+        try:
+            test = getattr(nc, name)
+            if not test:
+                return name, 'Falsy value: {}'.format(test)
+        except Exception as e:
+            return name, str(e)
+    return False
 
 
 if __name__ == '__main__':
