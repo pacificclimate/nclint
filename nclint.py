@@ -7,7 +7,8 @@ import sys
 import argparse
 
 import numpy
-import netCDF4
+
+import nchelpers
 
 check_list = []
 def is_a_check(fun):
@@ -441,7 +442,7 @@ if __name__ == '__main__':
         checks.append(globals()[check])
 
     for file_ in args.files:
-        nc = netCDF4.Dataset(file_, 'r')
+        nc = nchelpers.CFDataset(file_, 'r')
         for check in checks:
             result = check(nc)
             if result:
