@@ -463,11 +463,13 @@ if __name__ == '__main__':
             sys.exit(1)
         checks.append(globals()[check])
 
+    exit_status = 0
     for file_ in args.files:
         nc = nchelpers.CFDataset(file_, 'r')
         for check in checks:
             result = check(nc)
             if result:
+                exit_status = 1
                 if args.verbose:
                     print('{} FAILED {}: {}'.format(file_, check.__name__, result))
                 else:
@@ -475,3 +477,5 @@ if __name__ == '__main__':
                     # In non-verbose mode, we only care whether a file is
                     # good/bad. If it fails, skip the rest of the checks
                     break
+
+    sys.exit(exit_status)
