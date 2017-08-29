@@ -11,7 +11,7 @@ setup(
     author="James Hiebert",
     author_email="hiebert@uvic.ca",
     zip_safe=True,
-    install_requires=['netCDF4', 'numpy'],
+    install_requires=['nchelpers', 'numpy'],
     scripts=['nclint.py'],
     classifiers=[
         'Development Status :: 4 - Beta',

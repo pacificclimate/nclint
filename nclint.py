@@ -1,3 +1,4 @@
+#!python
 '''nclint: A simple script which checks NetCDF files for problems
 
 Outputs the name of any file that fails any check.
@@ -7,7 +8,8 @@ import sys
 import argparse
 
 import numpy
-import netCDF4
+
+import nchelpers
 
 check_list = []
 def is_a_check(fun):
@@ -409,6 +411,27 @@ def missing_hydromodel_gcm_mandatory_global_attrs(nc):
            missing_hydromodel_specific_mandatory_global_attrs(nc)
 
 
+@is_a_check
+def cant_generate_climos(nc):
+    """Checks to see if the generate_climos script will fail (raise an
+    exception) due to metadata when run.
+
+    Tests whether the nchelpers properties that generate_climos
+    needs are undefined or raise an exception.
+    """
+    for name in '''
+        time_var
+        cmor_filename
+    '''.split():
+        try:
+            test = getattr(nc, name)
+            if not test:
+                return name, 'Falsy value: {}'.format(test)
+        except Exception as e:
+            return name, str(e)
+    return False
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('files', metavar='FILE', type=str, nargs='*',
@@ -440,11 +463,13 @@ if __name__ == '__main__':
             sys.exit(1)
         checks.append(globals()[check])
 
+    exit_status = 0
     for file_ in args.files:
-        nc = netCDF4.Dataset(file_, 'r')
+        nc = nchelpers.CFDataset(file_, 'r')
         for check in checks:
             result = check(nc)
             if result:
+                exit_status = 1
                 if args.verbose:
                     print('{} FAILED {}: {}'.format(file_, check.__name__, result))
                 else:
@@ -452,3 +477,5 @@ if __name__ == '__main__':
                     # In non-verbose mode, we only care whether a file is
                     # good/bad. If it fails, skip the rest of the checks
                     break
+
+    sys.exit(exit_status)
