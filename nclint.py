@@ -432,6 +432,24 @@ def cant_generate_climos(nc):
     return False
 
 
+@is_a_check
+def has_masked_dimensions(nc):
+    """Checks for any dimension variables that have masked values.
+
+    Returns a list containing the names of each such dimension variable.
+
+    A masked dimension is not logically natural, and it can cause trouble
+    when processing the file. Specifically, a masked time variable causes
+    ``generate_climos`` (entirely reasonably) to omit any masked time period
+    and/or to not be able to determine the time resolution of the file.
+    """
+    return [
+        dim for dim in nc.dimensions
+        if isinstance(nc.variables[dim][:], numpy.ma.core.MaskedArray)
+    ]
+
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('files', metavar='FILE', type=str, nargs='*',
