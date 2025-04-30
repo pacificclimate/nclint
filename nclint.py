@@ -1,8 +1,8 @@
 #!python
-"""nclint: A simple script which checks NetCDF files for problems
+'''nclint: A simple script which checks NetCDF files for problems
 
 Outputs the name of any file that fails any check.
-"""
+'''
 
 import sys
 import argparse
@@ -12,8 +12,6 @@ import numpy
 import nchelpers
 
 check_list = []
-
-
 def is_a_check(fun):
     check_list.append(fun.__name__)
     return fun
@@ -21,7 +19,7 @@ def is_a_check(fun):
 
 @is_a_check
 def layer_one_missing(nc):
-    """Checks an open NetCDF file for a missing layer at t=1
+    '''Checks an open NetCDF file for a missing layer at t=1
 
     Last year we did a round of processing large climate rasters and
     computing multidecadal means (e.g. a temporal mean across a 30
@@ -34,13 +32,13 @@ def layer_one_missing(nc):
     steps where the 1st appears to contain data, but all subsequent
     time steps do not. They can be easily identified by opening the
     file and testing whether the layer at t=1 is all NA/missing.
-    """
+    '''
 
     for varname, var_ in nc.variables.items():
         # Only check grid variables
         if len(var_.dimensions) < 3:
             continue
-        one_layer = var_[1, :, :]
+        one_layer = var_[1,:,:]
         if isinstance(one_layer, numpy.ma.MaskedArray) and one_layer.mask.all():
             return True
     return False
@@ -48,28 +46,33 @@ def layer_one_missing(nc):
 
 @is_a_check
 def vars_missing_units(nc):
-    """Returns True if any variable is not attributed with units"""
+    '''Returns True if any variable is not attributed with units'''
     for var_ in nc.variables.values():
-        if not hasattr(var_, "units"):
+        if not hasattr(var_, 'units'):
             return True
     return False
 
 
 @is_a_check
 def missing_time_units(nc):
-    """Returns True if the time variable is missing units attribute"""
-    if "time" in nc.variables:
-        return not hasattr(nc.variables["time"], "units")
+    '''Returns True if the time variable is missing units attribute'''
+    if 'time' in nc.variables:
+        return not hasattr(nc.variables['time'], 'units')
     else:
         return True
 
 
 def missing_global_attrs(nc, attrs):
-    """Returns a list of all global attributes in array `attrs` that are missing from NetCDF file `nc`"""
+    '''Returns a list of all global attributes in array `attrs` that are missing from NetCDF file `nc`'''
     return [attr for attr in attrs if not hasattr(nc, attr)]
 
 
-cmip5_global_attrs = """
+@is_a_check
+def missing_cmip5_global_attrs(nc):
+    """Checks if any required CMIP5 output global attribute is missing.
+    Reference: http://cmip-pcmdi.llnl.gov/cmip5/docs/CMIP5_output_metadata_requirements_22May14.pdf
+    """
+    return missing_global_attrs(nc, '''
         branch_time
         contact
         Conventions
@@ -92,28 +95,7 @@ cmip5_global_attrs = """
         source
         table_id
         tracking_id
-    """.split()
-
-
-@is_a_check
-def missing_cmip5_global_attrs(nc):
-    """Checks if any required CMIP5 output global attribute is missing.
-    Reference: http://cmip-pcmdi.llnl.gov/cmip5/docs/CMIP5_output_metadata_requirements_22May14.pdf
-    """
-    return missing_global_attrs(
-        nc,
-        cmip5_global_attrs,
-    )
-
-
-cf_global_attrs = """
-        title
-        institution
-        source
-        history
-        references
-        comment
-    """.split()
+    '''.split())
 
 
 @is_a_check
@@ -121,10 +103,14 @@ def missing_cf_global_attrs(nc):
     """Checks if any CF Metadata Convention global attribute is missing.
     Reference: http://cfconventions.org/cf-conventions/v1.6.0/cf-conventions.html#description-of-file-contents
     """
-    return missing_global_attrs(
-        nc,
-        cf_global_attrs,
-    )
+    return missing_global_attrs(nc, '''
+        title
+        institution
+        source
+        history
+        references
+        comment
+    '''.split())
 
 
 # Mandatory and optional summary global attributes describing GCM output that the PCIC metdata standard uses when
@@ -132,7 +118,7 @@ def missing_cf_global_attrs(nc):
 # In use, these attributes always bear a prefix that indicates what they are describing (e.g., 'driving_' for
 # input to downscaling).
 
-summary_gcm_mandatory_global_attrs = """
+summary_gcm_mandatory_global_attrs = '''
     experiment
     experiment_id
     initialization_method
@@ -141,13 +127,13 @@ summary_gcm_mandatory_global_attrs = """
     model_id
     physics_version
     realization
-""".split()
+'''.split()
 
-summary_gcm_optional_global_attrs = """
+summary_gcm_optional_global_attrs = '''
     forcing
     frequency
     tracking_id
-""".split()
+'''.split()
 
 
 # Mandatory and optional attributes describing a gridded observational dataset that the PCIC metdata standard uses when
@@ -155,7 +141,7 @@ summary_gcm_optional_global_attrs = """
 # In use, these attributes always bear a prefix that indicates what they are describing (e.g., 'target_' for
 # calibration of downscaling).
 
-gridded_dataset_mandatory_global_attrs = """
+gridded_dataset_mandatory_global_attrs = '''
     contact
     dataset
     dataset_id
@@ -163,76 +149,68 @@ gridded_dataset_mandatory_global_attrs = """
     institution
     references
     version
-""".split()
+'''.split()
 
-gridded_dataset_optional_global_attrs = """
+gridded_dataset_optional_global_attrs = '''
     frequency
-""".split()
+'''.split()
 
 
 # Downscaling-specific mandatory and optional global attributes.
 # Note: additional attributes are required to fully describe a downscaling output file.
 
-downscaling_specific_mandatory_global_attrs = (
-    ["driving_" + attr for attr in summary_gcm_mandatory_global_attrs]
-    + ["target_" + attr for attr in gridded_dataset_mandatory_global_attrs]
-    + """
+downscaling_specific_mandatory_global_attrs = \
+    ['driving_' + attr for attr in summary_gcm_mandatory_global_attrs] + \
+    ['target_' + attr for attr in gridded_dataset_mandatory_global_attrs] + \
+    '''
         downscaling_method
         downscaling_method_id
         downscaling_package_id
-    """.split()
-)
+    '''.split()
 
-downscaling_specific_optional_global_attrs = [
-    "driving_" + attr for attr in summary_gcm_optional_global_attrs
-] + ["target_" + attr for attr in gridded_dataset_optional_global_attrs]
+downscaling_specific_optional_global_attrs = \
+    ['driving_' + attr for attr in summary_gcm_optional_global_attrs] + \
+    ['target_' + attr for attr in gridded_dataset_optional_global_attrs]
+
 
 
 # Model forcing by observational data mandatory and optional attributes
 
-model_forcing_observational_mandatory_global_attrs = [
-    "forcing_obs_" + attr for attr in gridded_dataset_mandatory_global_attrs
-]
-model_forcing_observational_optional_global_attrs = [
-    "forcing_obs_" + attr for attr in gridded_dataset_optional_global_attrs
-]
+model_forcing_observational_mandatory_global_attrs = \
+    ['forcing_obs_' + attr for attr in gridded_dataset_mandatory_global_attrs]
+model_forcing_observational_optional_global_attrs = \
+    ['forcing_obs_' + attr for attr in gridded_dataset_optional_global_attrs]
 
 
 # Model forcing by downscaled GCM data mandatory and optional attributes
 
-model_forcing_downscaled_gcm_mandatory_global_attrs = [
-    "forcing_" + attr for attr in downscaling_specific_mandatory_global_attrs
-]
-model_forcing_downscaled_gcm_optional_global_attrs = [
-    "forcing_" + attr for attr in downscaling_specific_optional_global_attrs
-]
+model_forcing_downscaled_gcm_mandatory_global_attrs = \
+    ['forcing_' + attr for attr in downscaling_specific_mandatory_global_attrs]
+model_forcing_downscaled_gcm_optional_global_attrs = \
+    ['forcing_' + attr for attr in downscaling_specific_optional_global_attrs]
 
 
 # Model calibration (by gridded dataset) mandatory and optional attributes
 
-model_calibration_mandatory_global_attrs = [
-    "calibration_" + attr for attr in gridded_dataset_mandatory_global_attrs
-]
-model_calibration_optional_global_attrs = [
-    "calibration_" + attr for attr in gridded_dataset_optional_global_attrs
-]
+model_calibration_mandatory_global_attrs = ['calibration_' + attr for attr in gridded_dataset_mandatory_global_attrs]
+model_calibration_optional_global_attrs = ['calibration_' + attr for attr in gridded_dataset_optional_global_attrs]
 
 
 # Hydromodel-specific mandatory and optional attributes
 # Note: additional attributes are required to fully describe a hydromodel output file.
 
-hydromodel_specific_mandatory_global_attrs = """
+hydromodel_specific_mandatory_global_attrs = '''
     domain
     hydromodel_method
     hydromodel_method_id
     hydromodel_version
     hydromodel_resolution
     hydromodel_type
-""".split()
+'''.split()
 
-hydromodel_specific_optional_global_attrs = """
+hydromodel_specific_optional_global_attrs = '''
     hydromodel_settings
-""".split()
+'''.split()
 
 
 @is_a_check
@@ -241,9 +219,7 @@ def missing_pcic_common_mandatory_global_attrs(nc):
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Table A.
     """
-    return missing_global_attrs(
-        nc,
-        """
+    return missing_global_attrs(nc, '''
         contact
         Conventions
         creation_date
@@ -255,8 +231,7 @@ def missing_pcic_common_mandatory_global_attrs(nc):
         project_id
         table_id
         title
-    """.split(),
-    )
+    '''.split())
 
 
 @is_a_check
@@ -277,9 +252,7 @@ def missing_downscaling_mandatory_global_attrs(nc):
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Tables A & B
     """
-    return missing_pcic_common_mandatory_global_attrs(
-        nc
-    ) + missing_downscaling_specific_mandatory_global_attrs(nc)
+    return missing_pcic_common_mandatory_global_attrs(nc) + missing_downscaling_specific_mandatory_global_attrs(nc)
 
 
 @is_a_check
@@ -289,12 +262,12 @@ def missing_downscaling_optional_global_attrs(nc):
     Tables A & B
     """
     return missing_global_attrs(
-        nc,
-        downscaling_specific_optional_global_attrs
-        + """
+        nc, 
+        downscaling_specific_optional_global_attrs +
+        '''
             domain
             tracking_id
-        """.split(),
+        '''.split()
     )
 
 
@@ -304,9 +277,7 @@ def missing_downscaling_any_global_attrs(nc):
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Tables A & B
     """
-    return missing_downscaling_mandatory_global_attrs(
-        nc
-    ) + missing_downscaling_optional_global_attrs(nc)
+    return missing_downscaling_mandatory_global_attrs(nc) + missing_downscaling_optional_global_attrs(nc)
 
 
 @is_a_check
@@ -315,12 +286,9 @@ def missing_model_forcing_general_mandatory_attrs(nc):
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Table C1
     """
-    return missing_global_attrs(
-        nc,
-        """
+    return missing_global_attrs(nc, '''
         forcing_type
-    """.split(),
-    )
+    '''.split())
 
 
 @is_a_check
@@ -329,12 +297,9 @@ def missing_model_forcing_general_optional_attrs(nc):
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Table C1
     """
-    return missing_global_attrs(
-        nc,
-        """
+    return missing_global_attrs(nc, '''
         forcing_domain
-    """.split(),
-    )
+    '''.split())
 
 
 @is_a_check
@@ -346,6 +311,7 @@ def missing_model_forcing_observational_mandatory_attrs(nc):
     return missing_global_attrs(nc, model_forcing_observational_mandatory_global_attrs)
 
 
+
 @is_a_check
 def missing_model_forcing_observational_optional_attrs(nc):
     """Checks if any optional global metadata attribute describing model forcing by observational data is missing.
@@ -353,6 +319,7 @@ def missing_model_forcing_observational_optional_attrs(nc):
     Table C2
     """
     return missing_global_attrs(nc, model_forcing_observational_optional_global_attrs)
+
 
 
 @is_a_check
@@ -364,6 +331,7 @@ def missing_model_forcing_downscaled_gcm_mandatory_attrs(nc):
     return missing_global_attrs(nc, model_forcing_downscaled_gcm_mandatory_global_attrs)
 
 
+
 @is_a_check
 def missing_model_forcing_downscaled_gcm_optional_attrs(nc):
     """Checks if any optional global metadata attribute describing model forcing by downscaled gcm data is missing.
@@ -373,6 +341,7 @@ def missing_model_forcing_downscaled_gcm_optional_attrs(nc):
     return missing_global_attrs(nc, model_forcing_downscaled_gcm_optional_global_attrs)
 
 
+
 @is_a_check
 def missing_calibration_mandatory_attrs(nc):
     """Checks if any mandatory global metadata attribute describing model calibration dataset is missing.
@@ -380,6 +349,7 @@ def missing_calibration_mandatory_attrs(nc):
     Table D
     """
     return missing_global_attrs(nc, model_calibration_mandatory_global_attrs)
+
 
 
 @is_a_check
@@ -420,13 +390,11 @@ def missing_hydromodel_obs_mandatory_global_attrs(nc):
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Tables A, C1, C2, D, E
     """
-    return (
-        missing_pcic_common_mandatory_global_attrs(nc)
-        + missing_model_forcing_general_mandatory_attrs(nc)
-        + missing_model_forcing_observational_mandatory_attrs(nc)
-        + missing_calibration_mandatory_attrs(nc)
-        + missing_hydromodel_specific_mandatory_global_attrs(nc)
-    )
+    return missing_pcic_common_mandatory_global_attrs(nc) + \
+           missing_model_forcing_general_mandatory_attrs(nc) + \
+           missing_model_forcing_observational_mandatory_attrs(nc) + \
+           missing_calibration_mandatory_attrs(nc) + \
+           missing_hydromodel_specific_mandatory_global_attrs(nc)
 
 
 @is_a_check
@@ -436,13 +404,11 @@ def missing_hydromodel_gcm_mandatory_global_attrs(nc):
     Reference: https://pcic.uvic.ca/confluence/display/CSG/PCIC+metadata+standard+for+downscaled+data+and+hydrology+modelling+data
     Tables A, C1, C3, D, E
     """
-    return (
-        missing_pcic_common_mandatory_global_attrs(nc)
-        + missing_model_forcing_general_mandatory_attrs(nc)
-        + missing_model_forcing_downscaled_gcm_mandatory_attrs(nc)
-        + missing_calibration_mandatory_attrs(nc)
-        + missing_hydromodel_specific_mandatory_global_attrs(nc)
-    )
+    return missing_pcic_common_mandatory_global_attrs(nc) + \
+           missing_model_forcing_general_mandatory_attrs(nc) + \
+           missing_model_forcing_downscaled_gcm_mandatory_attrs(nc) + \
+           missing_calibration_mandatory_attrs(nc) + \
+           missing_hydromodel_specific_mandatory_global_attrs(nc)
 
 
 @is_a_check
@@ -453,14 +419,14 @@ def cant_generate_climos(nc):
     Tests whether the nchelpers properties that generate_climos
     needs are undefined or raise an exception.
     """
-    for name in """
+    for name in '''
         time_var
         cmor_filename
-    """.split():
+    '''.split():
         try:
             test = getattr(nc, name)
             if not test:
-                return name, "Falsy value: {}".format(test)
+                return name, 'Falsy value: {}'.format(test)
         except Exception as e:
             return name, str(e)
     return False
@@ -478,41 +444,24 @@ def has_masked_dimensions(nc):
     and/or to not be able to determine the time resolution of the file.
     """
     return [
-        dim
-        for dim in nc.dimensions
+        dim for dim in nc.dimensions
         if isinstance(nc.variables[dim][:], numpy.ma.core.MaskedArray)
     ]
 
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "files",
-        metavar="FILE",
-        type=str,
-        nargs="*",
-        help="File to check for missing layer",
-    )
-    parser.add_argument(
-        "-c",
-        "--checks",
-        default="layer_one_missing",
-        help="Comma separated list of check names to be performed",
-    )
-    parser.add_argument(
-        "-l",
-        "--list_checks",
-        action="store_true",
-        help="List the names of all available checks and exit",
-        default=False,
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Provide more detail about available checks and check failures",
-        default=False,
-    )
+    parser.add_argument('files', metavar='FILE', type=str, nargs='*',
+            help='File to check for missing layer')
+    parser.add_argument('-c', '--checks', default='layer_one_missing',
+            help='Comma separated list of check names to be performed')
+    parser.add_argument('-l', '--list_checks', action='store_true',
+            help='List the names of all available checks and exit',
+            default=False)
+    parser.add_argument('-v', '--verbose', action='store_true',
+            help='Provide more detail about available checks and check failures',
+            default=False)
     parser.add_argument(
         "--all",
         action="store_true",
@@ -526,9 +475,9 @@ if __name__ == "__main__":
         if args.verbose:
             for check_name in check_list:
                 check = globals()[check_name]
-                print("{}:\n{}\n".format(check_name, check.__doc__))
+                print('{}:\n{}\n'.format(check_name, check.__doc__))
         else:
-            print("Available checks:", ",".join(check_list))
+            print("Available checks:", ','.join(check_list))
         sys.exit(0)
 
     if args.all:
@@ -543,16 +492,15 @@ if __name__ == "__main__":
 
     exit_status = 0
     for file_ in args.files:
-        print("Checking file:", file_)
-
-        nc = nchelpers.CFDataset(file_, "r")
+        nc = nchelpers.CFDataset(file_, 'r')
         for check in checks:
             result = check(nc)
             if result:
                 exit_status = 1
                 if args.verbose:
-                    print("{} FAILED {}: {}".format(file_, check.__name__, result))
+                    print('{} FAILED {}: {}'.format(file_, check.__name__, result))
                 else:
+                    print(file_)
                     # In non-verbose mode, we only care whether a file is
                     # good/bad. If it fails, skip the rest of the checks
                     break
